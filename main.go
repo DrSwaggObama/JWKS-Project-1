@@ -14,7 +14,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
-
+// Data structures for RSA key pair management
 type KeyPair struct {
 	Kid        string
 	PrivateKey *rsa.PrivateKey
@@ -22,6 +22,7 @@ type KeyPair struct {
 	ExpiresAt  time.Time
 }
 
+// JSON Web Key format for JWKS response
 type JWK struct {
 	Kty string `json:"kty"`
 	Kid string `json:"kid"`
@@ -31,10 +32,12 @@ type JWK struct {
 	E   string `json:"e"`
 }
 
+// JSON Web key set containing multiple JWKSs
 type JWKS struct {
 	Keys []JWK `json:"keys"`
 }
 
+// Global key storage and test injection points
 var (
 	validKey   *KeyPair
 	expiredKey *KeyPair
@@ -45,6 +48,7 @@ var (
 	}
 )
 
+// Key generation utilities
 func generateKeyPair(expiresAt time.Time) (*KeyPair, error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -59,6 +63,7 @@ func (kp *KeyPair) toJWK() JWK {
 	return JWK{"RSA", kp.Kid, "sig", "RS256", n, e}
 }
 
+// HTTP handlers for JWKS and authentication endpoints 
 func jwksHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
@@ -102,6 +107,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 }
 
+// Server initialization and startup 
 func initKeys() error {
 	var err error
 	if validKey, err = generateKeyPairFunc(time.Now().Add(24 * time.Hour)); err != nil {
